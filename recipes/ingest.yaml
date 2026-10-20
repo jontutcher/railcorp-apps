@@ -1,0 +1,52 @@
+# Recipe for the ingest app: how the migrator fetches, builds and accepts it.
+app: ingest
+source:
+  repo: https://github.com/jontutcher/railcorp-apps
+  context: ingest
+  dockerfile: ingest/Dockerfile
+  target: ""
+  buildArgs: {}
+platform: linux/arm64
+runtime:
+  # Mirrors the Pod spec the demo uses; the acceptance runner starts the image this way.
+  command: []        # image default: uv run python app.py
+  args: []
+  env:
+    PORT: "8080"
+  port: 8080
+  readyPath: /healthz
+  readyTimeoutSeconds: 60
+acceptance:
+  version: 1
+  cases:
+    - name: startup-selfcheck
+      type: log-contains
+      pattern: "self-check"
+      withinSeconds: 10
+    - name: healthz
+      type: http
+      method: GET
+      path: /healthz
+      expectStatus: 200
+      expectJSON: {"status": "ok"}
+    - name: upload-pdf
+      type: http-multipart
+      path: /upload
+      field: file
+      fixture: fixtures/sample.pdf
+      expectStatus: 200
+      expectJSONField: {"detected": "application/pdf"}
+    - name: upload-text
+      type: http-multipart
+      path: /upload
+      field: file
+      fixture: fixtures/sample.txt
+      expectStatus: 200
+      expectJSONField: {"detected": "text/plain"}
+    - name: upload-png
+      type: http-multipart
+      path: /upload
+      field: file
+      fixture: fixtures/sample.png
+      expectStatus: 200
+      expectJSONField: {"detected": "image/png"}

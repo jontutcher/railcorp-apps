@@ -1,0 +1,33 @@
+# Recipe for the departures app.
+app: departures
+source:
+  repo: https://github.com/jontutcher/railcorp-apps
+  context: departures
+  dockerfile: departures/Dockerfile
+  target: ""
+  buildArgs: {}
+platform: linux/arm64
+runtime:
+  command: []
+  args: []
+  env:
+    PORT: "8080"
+  port: 8080
+  readyPath: /healthz
+  readyTimeoutSeconds: 60
+acceptance:
+  version: 1
+  cases:
+    - name: healthz
+      type: http
+      method: GET
+      path: /healthz
+      expectStatus: 200
+      expectJSON: {"status": "ok"}
+    - name: board
+      type: http
+      method: GET
+      path: /
+      expectStatus: 200
+      expectBodyContains: ["RailCorp Departures", "Brighton", "Gatwick Airport", "Cancelled"]
+      expectBodyCount: {"<tr>": 7}
